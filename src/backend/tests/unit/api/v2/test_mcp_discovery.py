@@ -129,6 +129,7 @@ async def test_timeout_limits_real_processes_and_reaps_uninitialized_sessions(
 
     assert len(results) == 12
     assert all(result["toolsCount"] is None and "error" in result for result in results)
+    assert all(result["errorCode"] == "timeout" for result in results)
     assert len(processes[0]) == MAX_CONCURRENT_CHECKS
     assert all(process.returncode is not None for process in processes[0])
     assert _manager_tasks() <= before

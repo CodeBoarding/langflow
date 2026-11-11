@@ -1,3 +1,5 @@
+import type { MCPServerInfoType } from "@/types/mcp";
+
 // The MCP server check (api/v2/mcp.py `check_server`) reports failures as
 // English sentences. Translate the fixed ones and the sentence around the
 // prefixed ones; the underlying exception text stays as the server sent it.
@@ -18,6 +20,14 @@ const PREFIXED: ReadonlyArray<readonly [string, string]> = [
 
 /** The slice of i18next's `t` this helper needs. */
 export type Translate = (key: string, options?: { detail: string }) => string;
+
+export function isServerCheckTimeout(
+  server: Pick<MCPServerInfoType, "error" | "errorCode">,
+): boolean {
+  return server.errorCode
+    ? server.errorCode === "timeout"
+    : (server.error?.startsWith("Timeout") ?? false);
+}
 
 export function serverErrorText(error: string, t: Translate): string {
   const exact = EXACT[error];

@@ -20,11 +20,12 @@ import SettingsPageHeader from "@/pages/SettingsPage/components/SettingsPageHead
 import useAlertStore from "@/stores/alertStore";
 import type { MCPServerInfoType } from "@/types/mcp";
 import { cn } from "@/utils/utils";
-import { serverErrorText } from "./serverErrorText";
+import { isServerCheckTimeout, serverErrorText } from "./serverErrorText";
 
 export default function MCPServersPage() {
   const { t } = useTranslation();
-  const { data: servers } = useGetMCPServers({ withCounts: true });
+  const { data: servers, refetch } = useGetMCPServers({ withCounts: true });
+  const [isRetrying, setIsRetrying] = useState(false);
   const { mutate: deleteServer } = useDeleteMCPServer();
   const setErrorData = useAlertStore((state) => state.setErrorData);
   const [addOpen, setAddOpen] = useState(false);
@@ -35,6 +36,15 @@ export default function MCPServersPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [serverToDelete, setServerToDelete] =
     useState<MCPServerInfoType | null>(null);
+
+  const retryServerChecks = async () => {
+    setIsRetrying(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRetrying(false);
+    }
+  };
 
   const handleEdit = async (name: string) => {
     try {
@@ -97,11 +107,24 @@ export default function MCPServersPage() {
               </div>
             )}
             {servers.length > 0 && (
-              <div
-                id="mcp-servers-list-label"
-                className="text-sm font-medium text-muted-foreground"
-              >
-                {t("mcp.servers.addedServers")}
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  id="mcp-servers-list-label"
+                  className="text-sm font-medium text-muted-foreground"
+                >
+                  {t("mcp.servers.addedServers")}
+                </span>
+                {servers.some(isServerCheckTimeout) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    aria-busy={isRetrying}
+                    disabled={isRetrying}
+                    onClick={() => void retryServerChecks()}
+                  >
+                    {t("common.retry")}
+                  </Button>
+                )}
               </div>
             )}
             {/* Rendered only when populated: a list role owning no listitem
@@ -139,11 +162,11 @@ export default function MCPServersPage() {
                           )}
                         >
                           {server.toolsCount === null
-                            ? server.error
-                              ? server.error.startsWith("Timeout")
-                                ? t("mcp.servers.statusTimeout")
-                                : t("mcp.servers.statusError")
-                              : t("mcp.servers.statusLoading")
+                            ? isServerCheckTimeout(server)
+                              ? t("mcp.servers.statusTimeout")
+                              : server.error
+                                ? t("mcp.servers.statusError")
+                                : t("mcp.servers.statusLoading")
                             : !server.toolsCount
                               ? t("mcp.servers.statusNoTools")
                               : t("mcp.servers.toolsCount", {

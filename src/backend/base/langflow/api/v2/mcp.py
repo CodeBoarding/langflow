@@ -11,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
 from langflow.api.utils import CurrentActiveUser, DbSession
-from langflow.api.utils.mcp.discovery import discovery_clients, run_server_checks
+from langflow.api.utils.mcp.discovery import discovery_clients, run_server_checks, server_check_timeout
 from langflow.api.v2.files import (
     MCP_SERVERS_FILE,
     download_file,
@@ -336,7 +336,7 @@ async def get_servers(
             except (TimeoutError, asyncio.TimeoutError) as e:
                 # Timeout errors
                 await logger.aerror(f"Timeout error for server {server_name}: {e}")
-                server_info["error"] = "Timeout when checking server tools"
+                return server_check_timeout(server_name)
             except OSError as e:
                 # System-level errors (process execution, file access)
                 await logger.aerror(f"System error for server {server_name}: {e}")
