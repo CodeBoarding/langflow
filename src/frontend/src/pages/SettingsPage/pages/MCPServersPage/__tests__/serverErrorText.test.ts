@@ -1,8 +1,27 @@
-import { serverErrorText, type Translate } from "../serverErrorText";
+import {
+  isServerCheckTimeout,
+  serverErrorText,
+  type Translate,
+} from "../serverErrorText";
 
 // Echo the key and its detail so each test sees which copy was chosen.
 const t: Translate = (key, options) =>
   options?.detail ? `${key}(${options.detail})` : key;
+
+describe("isServerCheckTimeout", () => {
+  it("recognizes the API code even if the message changes", () => {
+    expect(
+      isServerCheckTimeout({ errorCode: "timeout", error: "Deadline reached" }),
+    ).toBe(true);
+  });
+
+  it("still recognizes responses from older servers", () => {
+    expect(
+      isServerCheckTimeout({ error: "Timeout when checking server tools" }),
+    ).toBe(true);
+    expect(isServerCheckTimeout({ error: "Connection failed" })).toBe(false);
+  });
+});
 
 describe("serverErrorText", () => {
   it.each([

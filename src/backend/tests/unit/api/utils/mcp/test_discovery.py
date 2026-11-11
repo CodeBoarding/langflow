@@ -84,6 +84,7 @@ async def test_one_deadline_preserves_completed_results_and_cancels_active_check
 
     assert results[0] == {"name": "fast", "mode": "stdio", "toolsCount": 2}
     assert all(result["error"] == "Timeout when checking server tools" for result in results[1:])
+    assert all(result["errorCode"] == "timeout" for result in results[1:])
     assert len(started) == 1 + MAX_CONCURRENT_CHECKS
     assert sorted(finished) == sorted(started[1:])
 

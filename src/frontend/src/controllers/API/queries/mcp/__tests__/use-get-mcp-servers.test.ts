@@ -17,14 +17,15 @@ jest.mock("@/controllers/API/helpers/constants", () => ({
 import { mergeMCPServerCounts, useGetMCPServers } from "../use-get-mcp-servers";
 
 describe("mergeMCPServerCounts", () => {
-  it("clears a cached error when refreshed counts omit an error", () => {
+  it("clears the cached timeout after a successful retry", () => {
     const merged = mergeMCPServerCounts(
       [
         {
           name: "server",
           mode: null,
           toolsCount: null,
-          error: "Connection refused",
+          error: "Timeout when checking server tools",
+          errorCode: "timeout",
         },
       ],
       [
@@ -42,6 +43,7 @@ describe("mergeMCPServerCounts", () => {
         mode: "streamable_http",
         toolsCount: 2,
         error: undefined,
+        errorCode: undefined,
       },
     ]);
   });
@@ -64,16 +66,20 @@ describe("useGetMCPServers", () => {
     queryClient.clear();
   });
 
-  it("fetches counts once without retriggering from its own cache update", async () => {
-    let toolsCount = 2;
+  it("retries a timed-out check without retriggering from its own cache update", async () => {
+    let toolsCount: number | null = null;
     let servers = [{ name: "server", mode: null, toolsCount: null }];
     mockApiGet.mockImplementation((url: string) =>
       Promise.resolve({
         data: url.endsWith("action_count=true")
           ? servers.map((server) => ({
               ...server,
-              mode: "stdio",
+              mode: toolsCount === null ? null : "stdio",
               toolsCount,
+              ...(toolsCount === null && {
+                error: "Timeout when checking server tools",
+                errorCode: "timeout",
+              }),
             }))
           : servers,
       }),
@@ -93,8 +99,9 @@ describe("useGetMCPServers", () => {
     await waitFor(() => {
       expect(result.current.data?.[0]).toMatchObject({
         name: "server",
-        mode: "stdio",
-        toolsCount: 2,
+        mode: null,
+        toolsCount: null,
+        errorCode: "timeout",
       });
     });
 
@@ -114,7 +121,10 @@ describe("useGetMCPServers", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.data?.[0]?.toolsCount).toBe(3);
+      expect(result.current.data?.[0]).toMatchObject({
+        toolsCount: 3,
+        errorCode: undefined,
+      });
     });
     expect(
       mockApiGet.mock.calls.filter(([url]) =>

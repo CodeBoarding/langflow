@@ -37,6 +37,7 @@ export type MCPServerInfoType = {
   mode: string | null;
   toolsCount: number | null;
   error?: string;
+  errorCode?: string;
 };
 
 export type MCPServerType = {

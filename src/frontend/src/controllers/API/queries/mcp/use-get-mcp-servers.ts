@@ -22,6 +22,7 @@ export const mergeMCPServerCounts = (
       ...server,
       ...updated,
       error: updated.error ?? undefined,
+      errorCode: updated.errorCode,
     };
   });
 
@@ -49,12 +50,14 @@ export const useGetMCPServers: useQueryFunctionType<
           return cached &&
             (cached.toolsCount !== null ||
               cached.mode !== null ||
-              cached.error !== null)
+              cached.error !== undefined ||
+              cached.errorCode !== undefined)
             ? {
                 ...server,
                 toolsCount: cached.toolsCount,
                 mode: cached.mode,
                 error: cached.error,
+                errorCode: cached.errorCode,
               }
             : server;
         });

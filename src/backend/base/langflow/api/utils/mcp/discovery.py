@@ -16,6 +16,17 @@ _LIMITER_ATTRIBUTE = "_langflow_mcp_discovery_limiter"
 ServerInfo = dict[str, str | int | None]
 
 
+def server_check_timeout(server_name: str) -> ServerInfo:
+    """Keep individual and batch deadline results on the same API contract."""
+    return {
+        "name": server_name,
+        "mode": None,
+        "toolsCount": None,
+        "error": "Timeout when checking server tools",
+        "errorCode": "timeout",
+    }
+
+
 async def _finish_cleanup(future: asyncio.Future) -> bool:
     """Drain owned work even under repeated cancellation; report deferred cancellation."""
     cancelled = False
@@ -95,10 +106,7 @@ async def run_server_checks(
             headers={"Retry-After": "1"},
         )
 
-    results: list[ServerInfo] = [
-        {"name": name, "mode": None, "toolsCount": None, "error": "Timeout when checking server tools"}
-        for name in server_names
-    ]
+    results = [server_check_timeout(name) for name in server_names]
     pending = iter(enumerate(server_names))
 
     async def worker() -> None:
