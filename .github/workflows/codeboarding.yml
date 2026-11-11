@@ -38,9 +38,9 @@ jobs:
     steps:
       - uses: CodeBoarding/CodeBoarding-action@v1
         with:
-          # CodeBoarding's free hosted tier. No secret to add: the run authenticates
-          # with the GitHub OIDC token that `id-token: write` above grants.
-          llm: hosted
+          llm: license
+          license_key: ${{ secrets.CODEBOARDING_LICENSE }}
+          depth_cap: '4'
 
   sync:
     if: github.event_name == 'push'
@@ -54,6 +54,6 @@ jobs:
       - uses: CodeBoarding/CodeBoarding-action@v1
         with:
           mode: sync
-          # CodeBoarding's free hosted tier. No secret to add: the run authenticates
-          # with the GitHub OIDC token that `id-token: write` above grants.
-          llm: hosted
+          llm: license
+          license_key: ${{ secrets.CODEBOARDING_LICENSE }}
+          depth_cap: '4'
